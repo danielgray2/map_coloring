@@ -1,3 +1,5 @@
+# pylint: disable=relative-beyond-top-level
+
 from math import sqrt, isinf
 import random
 import numpy as np

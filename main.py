@@ -1,5 +1,6 @@
 from tkinter import Tk, Canvas
 from map.map import Map
+from algos.annealing import Annealing
 import pickle
 import sys
 
@@ -44,4 +45,5 @@ def display_maps(maps):
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'g':
         generate_maps()
-    display_maps(pickle.load(open('./data/map_data.p', 'rb')))
+    #display_maps(pickle.load(open('./data/map_data.p', 'rb')))
+    Annealing.solve()
