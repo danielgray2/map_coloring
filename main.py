@@ -1,5 +1,5 @@
 from tkinter import Tk, Canvas
-from map import Map
+from map.map import Map
 import pickle
 import sys
 
@@ -7,7 +7,7 @@ def generate_maps():
     maps = []
     for i in range(3):
         maps = maps + [ Map((j+1)*10) for j in range(10)]
-    pickle.dump(maps, open('map_data.p', 'wb'))
+    pickle.dump(maps, open('./data/map_data.p', 'wb'))
     #maps = [Map(100)]
     #display_maps(maps)
     #return maps
@@ -42,6 +42,6 @@ def display_maps(maps):
         root.mainloop()
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'g':
-        maps = generate_maps()
-    display_maps(pickle.load(open('map_data.p', 'rb')))
+    if len(sys.argv) > 1 and sys.argv[1] == 'g':
+        generate_maps()
+    display_maps(pickle.load(open('./data/map_data.p', 'rb')))
