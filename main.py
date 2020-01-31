@@ -1,6 +1,7 @@
 from tkinter import Tk, Canvas
 from map.map import Map
 from algos.annealing import Annealing
+#from algos.genetic import Genetic
 import pickle
 import sys
 

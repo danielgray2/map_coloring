@@ -23,3 +23,15 @@ class Country():
 
     def add_not_neighbor(self, not_neighbor):
         self.not_neighbors.append(not_neighbor)
+    
+    def set_valid_colors(self, colors):
+        self.valid_colors = colors
+
+    def get_valid_colors(self):
+        return self.valid_colors
+
+    def set_color(self, color):
+        self.color = color
+    
+    def get_color(self):
+        return self.color
