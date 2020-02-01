@@ -6,6 +6,9 @@ from map.map import Map
 
 class Genetic:
 
+    def __init__(self):
+        self.steps = 0
+
     def solve(self, map, num_colors, problem_size):
         self.problem_size = problem_size
         self.original_temp = 10
@@ -13,7 +16,6 @@ class Genetic:
         self.population = []
         self.num_colors = num_colors
         self.temperature = 10
-        self.steps = 0
         self.fittest = None
         self.map = map
         self.setup(map, num_colors)
@@ -117,7 +119,7 @@ class Genetic:
                 first_pool = tournament_results['winners']
             else:
                 first_pool = tournament_results['losers']
-            if group_assignment > bench_mark:
+            if group_assignment < bench_mark:
                 other_parent = random.choice(first_pool)
                 #first_pool.remove(other_parent)
                 #all_parents.remove(other_parent)
@@ -131,18 +133,15 @@ class Genetic:
         return new_generation
 
     def mate(self, parent, other_parent, new_generation):
-        # By starting at index one, we ensure that at least one gene
-        # comes from each parent
-        cross_point = random.randint(1, len(parent.map.countries))
         child = Solution(parent.map, self.num_colors)
         chance_of_mutation = 0.05
 
-        # By having a range of the cross_point, we can ensure that
-        # at least one "gene" comes from both parents
-        for i in range(cross_point):
-            parent_color = other_parent.map.countries[i].get_color()
-            child.map.countries[i].set_color(parent_color)
-            if random.uniform(0, 1) <= 0.05:
+        for i in range(len(child.map.countries)):
+            swap = random.uniform(0, 1)
+            if swap <= 0.5:
+                parent_color = other_parent.map.countries[i].get_color()
+                child.map.countries[i].set_color(parent_color)
+            if random.uniform(0, 1) <= chance_of_mutation:
                 random.choice(child.map.countries).set_color(random.choice(range(child.num_colors_available)))
         new_generation.append(child)
 
@@ -161,6 +160,7 @@ class Genetic:
         everyone = old_generation
         everyone.extend(new_generation)
         generation_to_return = []
+        random.shuffle(everyone)
 
         for person in everyone:
             if person.get_fitness() < self.fittest.get_fitness():
@@ -170,26 +170,27 @@ class Genetic:
         for person in everyone:
             if self.fittest.get_fitness() >= person.get_fitness():
                 generation_to_return.append(person)
-                everyone.remove(person)
             else:
                 stat = math.exp(-((person.get_fitness() - self.fittest.get_fitness()) / self.heat_function()))
                 do_we_select = random.uniform(0,1)
                 if do_we_select <= stat:
                     generation_to_return.append(person)
-                    everyone.remove(person)
 
-        while len(generation_to_return) < 20:
+        while len(generation_to_return) < len(self.population):
             person_to_append = random.choice(everyone)
             generation_to_return.append(person_to_append)
             everyone.remove(person_to_append)
 
         counter = 0
-        for individual in new_generation:
-            if individual.get_fitness == new_generation[0].get_fitness():
+        for individual in generation_to_return:
+            if round(individual.get_fitness(),4) == round(new_generation[0].get_fitness(),4):
                 counter += 1
 
-        if counter >= len(new_generation)-2:
-            print(f"we convervged: {self.steps}")
+        if counter >= len(generation_to_return):
+            print(f"we converged: {self.steps}")
+            raise ValueError
+            self.setup(generation_to_return[0].map, self.num_colors)
+            return self.population
 
         for person in generation_to_return:
             print(f"{person.get_fitness()}")
