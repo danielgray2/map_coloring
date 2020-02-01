@@ -6,7 +6,8 @@ from map.map import Map
 
 class Genetic:
 
-    def solve(self, map, num_colors):
+    def solve(self, map, num_colors, problem_size):
+        self.problem_size = problem_size
         self.original_temp = 10
         self.temperature = self.original_temp
         self.population = []
@@ -155,39 +156,43 @@ class Genetic:
         for individual in old_generation:
             individual.determine_fitness()
 
-        parent_choices = []
+        choices = []
 
-        for parent in old_generation:
-           # Lots of parameters to tune
-        #    #stat = math.exp(-(0.1 * parent.get_fitness()) / (0.9 * (self.original_temp + 0.1 - self.heat_function())))
-           parent_choices.append(parent)
-           stat = math.exp(-0.1 * parent.get_fitness() / (self.heat_function()))
-           for i in range(int(round(stat,4)*100)):
-               parent_choices.append(parent)
-   
-        parent_to_keep = random.choice(parent_choices)
+        everyone = old_generation
+        everyone.extend(new_generation)
+        generation_to_return = []
 
-        child_choices = []
+        for person in everyone:
+            if person.get_fitness() < self.fittest.get_fitness():
+                print(f"updated_fittest on step {self.steps}")
+                self.fittest = copy.deepcopy(person)
+        
+        for person in everyone:
+            if self.fittest.get_fitness() >= person.get_fitness():
+                generation_to_return.append(person)
+                everyone.remove(person)
+            else:
+                stat = math.exp(-((person.get_fitness() - self.fittest.get_fitness()) / self.heat_function()))
+                do_we_select = random.uniform(0,1)
+                if do_we_select <= stat:
+                    generation_to_return.append(person)
+                    everyone.remove(person)
 
-        for child in new_generation:
-            # Lots of parameters to tune
-            child_choices.append(child)
-            stat = math.exp(-(self.heat_function()) / 0.1 * parent.get_fitness())
-            for i in range(int(round(stat,4)*100)):
-                child_choices.append(child)
-
-        child_to_remove = random.choice(child_choices)
-        new_generation.remove(child_to_remove)
-        new_generation.append(parent_to_keep)
-
-        for child in new_generation:
-           if child.get_fitness() < self.fittest.get_fitness():
-               print(f"updated_fittest on step {self.steps}")
-               self.fittest = copy.deepcopy(child)
+        while len(generation_to_return) < 20:
+            person_to_append = random.choice(everyone)
+            generation_to_return.append(person_to_append)
+            everyone.remove(person_to_append)
 
         counter = 0
         for individual in new_generation:
-           if individual.get_fitness == new_generation[0].get_fitness():
-               counter += 1
+            if individual.get_fitness == new_generation[0].get_fitness():
+                counter += 1
+
+        if counter >= len(new_generation)-2:
+            print(f"we convervged: {self.steps}")
+
+        for person in generation_to_return:
+            print(f"{person.get_fitness()}")
         
-        return new_generation
+        print("-----------------------")
+        return generation_to_return
