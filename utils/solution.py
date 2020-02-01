@@ -16,10 +16,10 @@ class Solution():
             for neighbor in neighbors:
                 if neighbor.color == country.color:
                     self.num_conflicts += 1
-
+        self.num_conflicts = self.num_conflicts/2
         # Divide num_conflicts by two because we
         # have counted each one twice
-        self.num_conflicts = self.num_conflicts/2
+        #self.num_conflicts = self.num_conflicts/2
 
         if self.num_conflicts > 0:
             self.is_valid = False
@@ -39,7 +39,7 @@ class Solution():
         colors_used = []
         for country in self.map.countries:
             if country.get_color() not in colors_used:
-                colors_used.append(country.get_color)
+                colors_used.append(country.get_color())
             if colors_used == self.num_colors_available:
                 self.num_colors_used = len(colors_used)
                 return self.num_colors_used

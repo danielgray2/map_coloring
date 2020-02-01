@@ -1,7 +1,7 @@
 from tkinter import Tk, Canvas
 from map.map import Map
 from algos.annealing import Annealing
-#from algos.genetic import Genetic
+from algos.genetic import Genetic
 import pickle
 import sys
 
@@ -18,7 +18,7 @@ def display_maps(maps):
         countries_to_draw = []
         borders_to_draw = []
         for country in map.countries:
-            countries_to_draw.append({'x': country.x*500, 'y': country.y*500})
+            countries_to_draw.append({'x': country.x*500, 'y': country.y*500, 'color': country.get_color()})
         for border in map.borders:
             borders_to_draw.append(
                 {
@@ -34,7 +34,16 @@ def display_maps(maps):
             highlightthickness=0,
             background='white')
         for country in countries_to_draw:
-            w.create_oval(country['x']-5, country['y']-5, country['x']+5, country['y']+5, fill="red")
+            if country['color'] == 0:
+                color = "red"
+            if country['color'] == 1:
+                color = "green"
+            if country['color'] == 2:
+                color = "blue"
+            if country['color'] == 3:
+                color = "yellow"
+
+            w.create_oval(country['x']-5, country['y']-5, country['x']+5, country['y']+5, fill=color)
         for border in borders_to_draw:
             w.create_line(border['start_x'], border['start_y'], border['end_x'], border['end_y'])
         w.pack()
@@ -43,4 +52,9 @@ def display_maps(maps):
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == '--g':
         generate_maps()
-    display_maps(pickle.load(open('./data/map_data.p', 'rb')))
+    maps = pickle.load(open('./data/map_data.p', 'rb'))
+    genetic = Genetic()
+    return_soln = genetic.solve(maps[0], 4)
+    print(f"Conflicts: {return_soln.num_conflicts}")
+    display_maps([return_soln.map])
+    print("hey")

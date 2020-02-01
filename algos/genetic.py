@@ -24,7 +24,8 @@ class Genetic:
 
         for i in range(pop_size):
             map_copy = copy.deepcopy(map)
-            for country in map_copy:
+            for country in map_copy.countries:
+                country.set_valid_colors(range(num_colors))
                 country.set_color(random.choice(country.get_valid_colors()))
             solution = Solution(map_copy, num_colors)
             solution.determine_fitness()
@@ -32,14 +33,16 @@ class Genetic:
 
     def run_algo(self):
         # Parameter that can be adjusted
-        run_times = 1000
-        self.fittest = self.population[0]
+        run_times = 10000
+        self.fittest = copy.deepcopy(self.population[0])
 
         for i in range(run_times):
             # Check if we have a valid solution
             for solution in self.population:
-                if(solution.is_valid and solution.get_num_colors_used == 3):
+                #if(solution.is_valid and solution.get_num_colors_used()):
+                if(solution.is_valid):
                     solution.steps = self.steps
+                    print(f'returned from here {self.steps}')
                     return solution
 
             # Get'er done
@@ -47,11 +50,14 @@ class Genetic:
             new_population = self.select_and_mate(tournament_results)
             self.population = self.select_parent_to_persist(self.population, new_population)
             self.steps += 1
+        return self.fittest
 
     def heat_function(self):
         # Parameter that can be adjusted
         tao = 0.97
         self.temperature = self.temperature * tao
+        if(self.temperature < 0.0015):
+            self.temperature = 0.0015
         return self.temperature
 
     def generate_tournaments(self):
@@ -63,8 +69,9 @@ class Genetic:
             contestant_one = random.choice(self.population)
             contestant_two = random.choice(self.population)
 
-            self.population.remove(contestant_one)
-            self.population.remove(contestant_two)
+            #self.population.remove(contestant_one)
+            #if contestant_two in self.population:
+            #    self.population.remove(contestant_two)
 
             contestant_one_fitness = contestant_one.get_fitness()
             contestant_two_fitness = contestant_two.get_fitness()
@@ -78,7 +85,9 @@ class Genetic:
 
         # Set the population back to what it was before the
         # tournaments
-        self.population.append(winners).append(losers)
+        #self.population.extend([winner['contestant'] for winner in winners])
+        #self.population.extend([loser['contestant'] for loser in losers])
+
         return {
             'winners': winners,
             'losers': losers
@@ -95,27 +104,28 @@ class Genetic:
         # }
         new_generation = []
         children_per_couple = 2
-        all_parents = tournament_results['winners'].copy().append(tournament_results['losers'].copy())
+        all_parents = tournament_results['winners']
+        all_parents.extend(tournament_results['losers'])
         random.shuffle(all_parents)
-        for parent in all_parents:
-            group_assignment = random.randrange(0, 1, 0.01)
+        for i in range(int(len(all_parents)/2)):
+            group_assignment = random.uniform(0, 1)
             # Parameter that can be adjusted
-            bench_mark = math.exp(1/self.heat_function())
+            bench_mark = math.exp(-1/self.heat_function())
 
-            if parent['position'] == 'winner':
+            if all_parents[i]['position'] == 'winner':
                 first_pool = tournament_results['winners']
             else:
                 first_pool = tournament_results['losers']
             if group_assignment > bench_mark:
                 other_parent = random.choice(first_pool)
-                all_parents.remove(other_parent)
-                first_pool.remove(other_parent)
+                #first_pool.remove(other_parent)
+                #all_parents.remove(other_parent)
             else:
                 other_parent = random.choice(all_parents)
-                all_parents.remove(other_parent)
+                #all_parents.remove(other_parent)
 
-            for i in range(children_per_couple-1):
-                self.mate(parent, other_parent, new_generation)
+            for j in range(children_per_couple):
+                self.mate(all_parents[i]['contestant'], other_parent['contestant'], new_generation)
 
         return new_generation
 
@@ -124,12 +134,15 @@ class Genetic:
         # comes from each parent
         cross_point = random.randint(1, len(parent.map.countries))
         child = Solution(parent.map, self.num_colors)
+        chance_of_mutation = 0.05
 
         # By having a range of the cross_point, we can ensure that
         # at least one "gene" comes from both parents
         for i in range(cross_point):
             parent_color = other_parent.map.countries[i].get_color()
             child.map.countries[i].set_color(parent_color)
+            if random.uniform(0, 1) <= 0.05:
+                random.choice(child.map.countries).set_color(random.choice(range(child.num_colors_available)))
         new_generation.append(child)
 
     def select_parent_to_persist(self, old_generation, new_generation):
@@ -138,25 +151,43 @@ class Genetic:
         # Select a child to end (as temp decreases, chose worse children)
         for individual in new_generation:
             individual.determine_fitness()
+        
+        for individual in old_generation:
+            individual.determine_fitness()
 
         parent_choices = []
 
         for parent in old_generation:
-            stat = (-(0.1 * parent.get_fitness()) / (0.9 * (self.original_temp + 0.1 - self.heat_function)))
-            for i in range(int(round(stat,4)*100)-1):
-                parent_choices.append(parent)
+           # Lots of parameters to tune
+        #    #stat = math.exp(-(0.1 * parent.get_fitness()) / (0.9 * (self.original_temp + 0.1 - self.heat_function())))
+           parent_choices.append(parent)
+           stat = math.exp(-0.1 * parent.get_fitness() / (self.heat_function()))
+           for i in range(int(round(stat,4)*100)):
+               parent_choices.append(parent)
    
         parent_to_keep = random.choice(parent_choices)
 
         child_choices = []
 
         for child in new_generation:
-            stat = -(10 + self.heat_function() / math.sqrt(child.get_fitness()))
-            for i in range(int(round(stat,4)*100)-1):
+            # Lots of parameters to tune
+            child_choices.append(child)
+            stat = math.exp(-(self.heat_function()) / 0.1 * parent.get_fitness())
+            for i in range(int(round(stat,4)*100)):
                 child_choices.append(child)
 
         child_to_remove = random.choice(child_choices)
-        child_choices.remove(child_to_remove)
-        child_choices.append(parent_to_keep)
+        new_generation.remove(child_to_remove)
+        new_generation.append(parent_to_keep)
 
-        return child_choices
+        for child in new_generation:
+           if child.get_fitness() < self.fittest.get_fitness():
+               print(f"updated_fittest on step {self.steps}")
+               self.fittest = copy.deepcopy(child)
+
+        counter = 0
+        for individual in new_generation:
+           if individual.get_fitness == new_generation[0].get_fitness():
+               counter += 1
+        
+        return new_generation
