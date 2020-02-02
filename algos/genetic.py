@@ -36,7 +36,7 @@ class Genetic:
 
     def run_algo(self):
         # Parameter that can be adjusted
-        run_times = 100
+        run_times = 1000
         self.fittest = copy.deepcopy(self.population[0])
 
         for i in range(run_times):
@@ -71,10 +71,6 @@ class Genetic:
         for i in range(int(len(self.population)/2)):
             contestant_one = random.choice(self.population)
             contestant_two = random.choice(self.population)
-
-            #self.population.remove(contestant_one)
-            #if contestant_two in self.population:
-            #    self.population.remove(contestant_two)
 
             contestant_one_fitness = contestant_one.get_fitness()
             contestant_two_fitness = contestant_two.get_fitness()
@@ -138,38 +134,64 @@ class Genetic:
         # Make sure that everyone's fitness is updated (old_generation is, but younger is not)
         # Select a parent to persist(as temp decreases, chose better parents)
         # Select a child to end (as temp decreases, chose worse children)
-   
-        fitest_parent = copy.deepcopy(old_generation[0])
-        fitest_parent.determine_fitness()
-        for individual in old_generation:
-            individual.determine_fitness()
-            if individual.get_fitness() < fitest_parent.get_fitness():
-                fitest_parent = copy.deepcopy(individual)
-
-        weakest_child = new_generation[0]
-        weakest_child.determine_fitness()
         for individual in new_generation:
             individual.determine_fitness()
-            if individual.get_fitness() > weakest_child.get_fitness():
-                weakest_child = individual
+        
+        for individual in old_generation:
+            individual.determine_fitness()
 
-        new_generation.remove(weakest_child)
-        new_generation.append(fitest_parent)
+        choices = []
 
-        for child in new_generation:
-           if child.get_fitness() < self.fittest.get_fitness():
-               print(f"updated_fittest on step {self.steps}")
-               self.fittest = copy.deepcopy(child)
+        everyone = copy.deepcopy(old_generation)
+        everyone.extend(new_generation)
+        generation_to_return = []
+        random.shuffle(everyone)
+
+        for person in everyone:
+            if person.get_fitness() < self.fittest.get_fitness():
+                print(f"updated_fittest on step {self.steps}")
+                self.fittest = copy.deepcopy(person)
+
+        for person in everyone:
+            if len(generation_to_return) < int(len(self.population)/5):
+                if self.fittest.get_fitness() >= person.get_fitness():
+                    generation_to_return.append(copy.deepcopy(person))
+                else:
+                    stat = math.exp(-((person.get_fitness() - self.fittest.get_fitness()) / (2 * self.heat_function())))
+                    do_we_select = random.uniform(0,1)
+                    if do_we_select <= stat:
+                        generation_to_return.append(copy.deepcopy(person))
+            else:
+                break
+
+        print(f"Hey hey: {len(generation_to_return)}")
+        while len(generation_to_return) < len(self.population):
+            person_to_append = random.choice(new_generation)
+            generation_to_return.append(person_to_append)
 
         counter = 0
-        for child in new_generation:
-            print(child.get_fitness())
-            if round(child.get_fitness(),4) == round(new_generation[0].get_fitness(),4):
+        for individual in generation_to_return:
+            if round(individual.get_fitness(),4) == round(new_generation[0].get_fitness(),4):
                 counter += 1
-        print("----------------------------------")
 
-        if counter >= len(new_generation):
-            print(f"We converged: {self.steps}")
-            raise ValueError
-        
-        return new_generation
+        if counter >= len(generation_to_return):
+            print(f"we converged: {self.steps}")
+            self.handle_convergence(generation_to_return[0].map, generation_to_return)
+
+        for person in generation_to_return:
+            print(f"{person.get_fitness()}")
+
+        print("-----------------------")
+        return generation_to_return
+
+    def handle_convergence(self, map, generation):
+        for i in range(int(len(self.population)/4)):
+            del generation[0]
+        for i in range(int(len(self.population)/4)):
+            map_copy = copy.deepcopy(map)
+            for country in map_copy.countries:
+                country.set_valid_colors(range(self.num_colors))
+                country.set_color(random.choice(country.get_valid_colors()))
+            solution = Solution(map_copy, self.num_colors)
+            solution.determine_fitness()
+            generation.append(solution)
