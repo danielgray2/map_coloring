@@ -36,7 +36,7 @@ class Genetic:
 
     def run_algo(self):
         # Parameter that can be adjusted
-        run_times = 10000
+        run_times = 100
         self.fittest = copy.deepcopy(self.population[0])
 
         for i in range(run_times):
@@ -80,11 +80,11 @@ class Genetic:
             contestant_two_fitness = contestant_two.get_fitness()
 
             if contestant_one_fitness < contestant_two_fitness:
-                winners.append({'contestant': contestant_one, 'position': 'winner'})
-                losers.append({'contestant': contestant_two, 'position': 'loser'})
+                winners.append({'contestant': copy.deepcopy(contestant_one), 'position': 'winner'})
+                losers.append({'contestant': copy.deepcopy(contestant_two), 'position': 'loser'})
             else:
-                winners.append({'contestant': contestant_two, 'position': 'winner'})
-                losers.append({'contestant': contestant_one, 'position': 'loser'})
+                winners.append({'contestant': copy.deepcopy(contestant_two), 'position': 'winner'})
+                losers.append({'contestant': copy.deepcopy(contestant_one), 'position': 'loser'})
 
         # Set the population back to what it was before the
         # tournaments
@@ -119,13 +119,10 @@ class Genetic:
                 first_pool = tournament_results['winners']
             else:
                 first_pool = tournament_results['losers']
-            if group_assignment < bench_mark:
+            if group_assignment > bench_mark:
                 other_parent = random.choice(first_pool)
-                #first_pool.remove(other_parent)
-                #all_parents.remove(other_parent)
             else:
                 other_parent = random.choice(all_parents)
-                #all_parents.remove(other_parent)
 
             for j in range(children_per_couple):
                 self.mate(all_parents[i]['contestant'], other_parent['contestant'], new_generation)
@@ -149,51 +146,38 @@ class Genetic:
         # Make sure that everyone's fitness is updated (old_generation is, but younger is not)
         # Select a parent to persist(as temp decreases, chose better parents)
         # Select a child to end (as temp decreases, chose worse children)
-        for individual in new_generation:
-            individual.determine_fitness()
-        
+   
+        fitest_parent = old_generation[0]
+        fitest_parent.determine_fitness()
         for individual in old_generation:
             individual.determine_fitness()
+            if individual.get_fitness() < fitest_parent.get_fitness():
+                fitest_parent = copy.deepcopy(individual)
 
-        choices = []
+        weakest_child = new_generation[0]
+        weakest_child.determine_fitness()
+        for individual in new_generation:
+            individual.determine_fitness()
+            if individual.get_fitness() > weakest_child.get_fitness():
+                fitest_parent = copy.deepcopy(individual)
 
-        everyone = old_generation
-        everyone.extend(new_generation)
-        generation_to_return = []
-        random.shuffle(everyone)
+        new_generation.remove(weakest_child)
+        new_generation.append(fitest_parent)
 
-        for person in everyone:
-            if person.get_fitness() < self.fittest.get_fitness():
-                print(f"updated_fittest on step {self.steps}")
-                self.fittest = copy.deepcopy(person)
-        
-        for person in everyone:
-            if self.fittest.get_fitness() >= person.get_fitness():
-                generation_to_return.append(person)
-            else:
-                stat = math.exp(-((person.get_fitness() - self.fittest.get_fitness()) / self.heat_function()))
-                do_we_select = random.uniform(0,1)
-                if do_we_select <= stat:
-                    generation_to_return.append(person)
-
-        while len(generation_to_return) < len(self.population):
-            person_to_append = random.choice(everyone)
-            generation_to_return.append(person_to_append)
-            everyone.remove(person_to_append)
+        for child in new_generation:
+           if child.get_fitness() < self.fittest.get_fitness():
+               print(f"updated_fittest on step {self.steps}")
+               self.fittest = copy.deepcopy(child)
 
         counter = 0
-        for individual in generation_to_return:
-            if round(individual.get_fitness(),4) == round(new_generation[0].get_fitness(),4):
+        for child in new_generation:
+            print(child.get_fitness())
+            if round(child.get_fitness(),4) == round(new_generation[0].get_fitness(),4):
                 counter += 1
+        print("----------------------------------")
 
-        if counter >= len(generation_to_return):
-            print(f"we converged: {self.steps}")
+        if counter >= len(new_generation):
+            print(f"We converged: {self.steps}")
             raise ValueError
-            self.setup(generation_to_return[0].map, self.num_colors)
-            return self.population
-
-        for person in generation_to_return:
-            print(f"{person.get_fitness()}")
         
-        print("-----------------------")
-        return generation_to_return
+        return new_generation
