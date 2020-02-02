@@ -54,7 +54,7 @@ if __name__ == '__main__':
         generate_maps()
     maps = pickle.load(open('./data/map_data.p', 'rb'))
     genetic = Genetic()
-    return_soln = genetic.solve(Map(7), 4, 10)
+    return_soln = genetic.solve(maps[5], 4, 10)
     print(f"Conflicts: {return_soln.num_conflicts}")
     display_maps([return_soln.map])
     print("hey")

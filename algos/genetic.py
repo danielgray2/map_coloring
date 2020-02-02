@@ -107,30 +107,22 @@ class Genetic:
         # }
         new_generation = []
         children_per_couple = 2
-        all_parents = tournament_results['winners']
-        all_parents.extend(tournament_results['losers'])
-        random.shuffle(all_parents)
-        for i in range(int(len(all_parents)/2)):
-            group_assignment = random.uniform(0, 1)
-            # Parameter that can be adjusted
-            bench_mark = math.exp(-1/self.heat_function())
-
-            if all_parents[i]['position'] == 'winner':
-                first_pool = tournament_results['winners']
-            else:
-                first_pool = tournament_results['losers']
-            if group_assignment > bench_mark:
-                other_parent = random.choice(first_pool)
-            else:
-                other_parent = random.choice(all_parents)
-
+        for i in range(int(len(tournament_results['winners'])/2)):
+            parent_one = random.choice(tournament_results['winners'])['contestant']
+            parent_two = random.choice(tournament_results['winners'])['contestant']
             for j in range(children_per_couple):
-                self.mate(all_parents[i]['contestant'], other_parent['contestant'], new_generation)
+                self.mate(parent_one, parent_two, new_generation)
+
+        for i in range(int(len(tournament_results['losers'])/2)):
+            parent_one = random.choice(tournament_results['losers'])['contestant']
+            parent_two = random.choice(tournament_results['losers'])['contestant']
+            for j in range(children_per_couple):
+                self.mate(parent_one, parent_two, new_generation)
 
         return new_generation
 
     def mate(self, parent, other_parent, new_generation):
-        child = Solution(parent.map, self.num_colors)
+        child = Solution(copy.deepcopy(parent.map), self.num_colors)
         chance_of_mutation = 0.05
 
         for i in range(len(child.map.countries)):
@@ -147,7 +139,7 @@ class Genetic:
         # Select a parent to persist(as temp decreases, chose better parents)
         # Select a child to end (as temp decreases, chose worse children)
    
-        fitest_parent = old_generation[0]
+        fitest_parent = copy.deepcopy(old_generation[0])
         fitest_parent.determine_fitness()
         for individual in old_generation:
             individual.determine_fitness()
@@ -159,7 +151,7 @@ class Genetic:
         for individual in new_generation:
             individual.determine_fitness()
             if individual.get_fitness() > weakest_child.get_fitness():
-                fitest_parent = copy.deepcopy(individual)
+                weakest_child = individual
 
         new_generation.remove(weakest_child)
         new_generation.append(fitest_parent)
