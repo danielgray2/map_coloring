@@ -35,3 +35,10 @@ class Country():
     
     def get_color(self):
         return self.color
+
+    def get_conflicts(self):
+        counter = 0
+        for neighbor in self.neighbors:
+            if neighbor.get_color() == self.get_color():
+                counter += 1
+        return counter

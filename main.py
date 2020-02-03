@@ -2,6 +2,7 @@ from tkinter import Tk, Canvas
 from map.map import Map
 from algos.annealing import Annealing
 from algos.genetic import Genetic
+from utils.sorted_queue import SortedQueue
 import pickle
 import sys
 
