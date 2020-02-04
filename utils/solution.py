@@ -1,5 +1,5 @@
 class Solution():
-    def __init__(self, map, num_colors):
+    def __init__(self, map, num_colors, name_of_algorithm):
         self.map = map
         self.num_colors_available = num_colors
         self.num_colors_used = 0
@@ -8,6 +8,7 @@ class Solution():
         self.num_conflicts = -1
         self.is_valid = False
         self.set_valid_colors(num_colors)
+        self.name_of_algorithm = name_of_algorithm
 
     def get_num_conflicts(self):
         self.num_conflicts = 0
@@ -54,3 +55,6 @@ class Solution():
 
     def get_fitness(self):
         return self.fitness
+    
+    def get_name_of_algorithm(self):
+        return self.name_of_algorithm

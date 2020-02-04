@@ -2,7 +2,7 @@ from tkinter import Tk, Canvas
 from map.map import Map
 from algos.annealing import Annealing
 from algos.genetic import Genetic
-from utils.sorted_queue import SortedQueue
+from utils.queue import Queue
 import pickle
 import sys
 
@@ -51,11 +51,39 @@ def display_maps(maps):
         root.mainloop()
 
 if __name__ == '__main__':
+    genetic = Genetic()
+    annealing = Annealing()
     if len(sys.argv) > 1 and sys.argv[1] == '--g':
         generate_maps()
-    maps = pickle.load(open('./data/map_data.p', 'rb'))
-    genetic = Genetic()
-    return_soln = genetic.solve(maps[5], 4, 10)
-    print(f"Conflicts: {return_soln.num_conflicts}")
-    display_maps([return_soln.map])
-    print("hey")
+    if len(sys.argv) > 1 and sys.argv[1] == '--rfr':
+        maps = pickle.load(open('./data/map_data.p', 'rb'))
+        solutions = []
+        for map in maps:
+            solutions.append(annealing.solve(map, 4))
+            print("------------------------------------------Got Past 1st annealing------------------------------")
+            solutions.append(genetic.solve(map, 4))
+            print("------------------------------------------Got Past 1st genetic------------------------------")
+            solutions.append(annealing.solve(map, 3))
+            print("------------------------------------------Got Past 2st annealing------------------------------")
+            solutions.append(genetic.solve(map, 3))
+            print("------------------------------------------Got Past 2st genetic------------------------------")
+
+            pickle.dump(solutions, open('./data/map_solutions.p', 'wb'))
+
+    if len(sys.argv) > 1 and sys.argv[1] == '--funrun':
+        #return_soln = genetic.solve(maps[5], 4)
+        return_soln = genetic.solve(maps[5], 4)
+        print(f"Conflicts: {return_soln.num_conflicts}")
+        display_maps([return_soln.map])
+        print("hey")
+    
+    if len(sys.argv) > 1 and sys.argv[1] == '--cr':
+        solutions = pickle.load(open('./data/map_solutions.p', 'rb'))
+        for solution in solutions:
+            print('---------------------------------------------------------')
+            print(f"Algorithm name: {solution.get_name_of_algorithm()}")
+            print(f"Problem size: {len(solution.map.countries)}")
+            print(f"Coloring: {solution.num_colors_available}")
+            print(f"Num conflicts: {solution.get_num_conflicts()}")
+            print(f"Decisions made: {solution.steps}")
+            print('---------------------------------------------------------')

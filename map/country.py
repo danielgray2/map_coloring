@@ -14,6 +14,7 @@ class Country():
         self.not_neighbors = []
         self.borders = []
         self.valid_colors = []
+        self.num_conflicts = 0
 
     def add_neighbor(self, neighbor):
         self.neighbors.append(neighbor)
@@ -41,4 +42,5 @@ class Country():
         for neighbor in self.neighbors:
             if neighbor.get_color() == self.get_color():
                 counter += 1
+        self.num_conflicts = counter
         return counter

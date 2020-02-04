@@ -9,8 +9,7 @@ class Genetic:
     def __init__(self):
         self.steps = 0
 
-    def solve(self, map, num_colors, problem_size):
-        self.problem_size = problem_size
+    def solve(self, map, num_colors):
         self.original_temp = 10
         self.temperature = self.original_temp
         self.population = []
@@ -23,20 +22,20 @@ class Genetic:
 
     def setup(self, map, num_colors):
         # Parameter that can be adjusted
-        pop_size = 20
+        self.pop_size = 20
 
-        for i in range(pop_size):
+        for i in range(self.pop_size):
             map_copy = copy.deepcopy(map)
             for country in map_copy.countries:
                 country.set_valid_colors(range(num_colors))
                 country.set_color(random.choice(country.get_valid_colors()))
-            solution = Solution(map_copy, num_colors)
+            solution = Solution(map_copy, num_colors, "GA")
             solution.determine_fitness()
             self.population.append(solution)
 
     def run_algo(self):
         # Parameter that can be adjusted
-        run_times = 1000
+        run_times = 700
         self.fittest = copy.deepcopy(self.population[0])
 
         for i in range(run_times):
@@ -45,7 +44,6 @@ class Genetic:
                 #if(solution.is_valid and solution.get_num_colors_used()):
                 if(solution.is_valid):
                     solution.steps = self.steps
-                    print(f'returned from here {self.steps}')
                     return solution
 
             # Get'er done
@@ -53,6 +51,7 @@ class Genetic:
             new_population = self.select_and_mate(tournament_results)
             self.population = self.select_parent_to_persist(self.population, new_population)
             self.steps += 1
+        self.fittest.steps = self.steps * self.pop_size
         return self.fittest
 
     def heat_function(self):
@@ -118,7 +117,7 @@ class Genetic:
         return new_generation
 
     def mate(self, parent, other_parent, new_generation):
-        child = Solution(copy.deepcopy(parent.map), self.num_colors)
+        child = Solution(copy.deepcopy(parent.map), self.num_colors, "GA")
         chance_of_mutation = 0.05
 
         for i in range(len(child.map.countries)):
@@ -149,11 +148,10 @@ class Genetic:
 
         for person in everyone:
             if person.get_fitness() < self.fittest.get_fitness():
-                print(f"updated_fittest on step {self.steps}")
                 self.fittest = copy.deepcopy(person)
 
         for person in everyone:
-            if len(generation_to_return) < int(len(self.population)/5):
+            if len(generation_to_return) < int(len(self.population)/2):
                 if self.fittest.get_fitness() >= person.get_fitness():
                     generation_to_return.append(copy.deepcopy(person))
                 else:
@@ -164,7 +162,6 @@ class Genetic:
             else:
                 break
 
-        print(f"Hey hey: {len(generation_to_return)}")
         while len(generation_to_return) < len(self.population):
             person_to_append = random.choice(new_generation)
             generation_to_return.append(person_to_append)
@@ -175,13 +172,8 @@ class Genetic:
                 counter += 1
 
         if counter >= len(generation_to_return):
-            print(f"we converged: {self.steps}")
             self.handle_convergence(generation_to_return[0].map, generation_to_return)
 
-        for person in generation_to_return:
-            print(f"{person.get_fitness()}")
-
-        print("-----------------------")
         return generation_to_return
 
     def handle_convergence(self, map, generation):
@@ -192,6 +184,6 @@ class Genetic:
             for country in map_copy.countries:
                 country.set_valid_colors(range(self.num_colors))
                 country.set_color(random.choice(country.get_valid_colors()))
-            solution = Solution(map_copy, self.num_colors)
+            solution = Solution(map_copy, self.num_colors, "GA")
             solution.determine_fitness()
             generation.append(solution)
